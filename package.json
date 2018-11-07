@@ -1,0 +1,19 @@
+{
+  "name": "discordbotillya",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bufferutil": "^3.0.3",
+    "chalk": "^2.4.1",
+    "discord.js": "^11.4.2",
+    "node-opus": "^0.2.7",
+    "opusscript": "0.0.6",
+    "ytdl-core": "^0.28.0"
+  }
+}
