@@ -51,8 +51,8 @@ function leaveChannel(bot, msg, channelid) {
 function beepBox(bot, msg, channelid, beepstring) {
     var voice = this.voiceConnections.find((e) => { return e.channel.id == channelid });
     if (voice) {
-        if (voice.queue.length == 0) {
-            voice.queue.push({ type: "beepbox", url: beepstring });
+        voice.queue.push({ type: "beepbox", url: beepstring });
+        if (voice.queue.length == 1) {
             var beepBuffer = getBeepBoxBuffer(beepstring);
             var readableStream = bufferToStream(beepBuffer);
             var dispatcher = voice.playStream(readableStream);
@@ -64,7 +64,6 @@ function beepBox(bot, msg, channelid, beepstring) {
             });
         }
         else {
-            voice.queue.push({ type: "beepbox", url: beepstring });
             msg.channel.send("Added to queue.");
         }
     }
@@ -73,8 +72,8 @@ function beepBox(bot, msg, channelid, beepstring) {
 function youTube(bot, msg, channelid, yturl) {
     var voice = this.voiceConnections.find((e) => { return e.channel.id == channelid });
     if (voice) {
-        if (voice.queue.length == 0) {
-            voice.queue.push({ type: "youtube", url: yturl });
+        voice.queue.push({ type: "youtube", url: yturl });
+        if (voice.queue.length == 1) {
             var stream = ytdl(yturl, { filter: 'audioonly' });
             var dispatcher = voice.playStream(stream);
             voice.dispatcher = dispatcher;
@@ -85,7 +84,6 @@ function youTube(bot, msg, channelid, yturl) {
             });
         }
         else {
-            voice.queue.push({ type: "youtube", url: yturl });
             msg.channel.send("Added to queue.");
         }
     }

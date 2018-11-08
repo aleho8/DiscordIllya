@@ -13,11 +13,14 @@ class CommandHandler {
 
 function executeCommand(bot, msg) {
     msg.content = msg.content.trim();
-    var commandname = msg.content.substring(1, msg.content.indexOf(" ") != -1 ? msg.content.indexOf(" ") : msg.content.length).toLowerCase();
+
+    var results = msg.content.replace(/\s+/g, " ").split(/\s/g);
+    var commandname = results[0].replace(this.prefix, "");
     var command = this.commands.find((c) => {
         return c.name === commandname || (c.aliases.findIndex((a) => { return a === commandname }) > -1);
     });
-    var args = msg.content.substring(msg.content.indexOf(" ") != -1 ? msg.content.indexOf(" ") + 1 : "").split(" ");
+    results.splice(0,1);
+    var args = results;
     if (command) {
         if (command.args != "" && args.length == 0) {
             msg.channel.send(`You missed a few arguments! Use \`${this.prefix}help\`!`);

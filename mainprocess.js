@@ -3,10 +3,19 @@ const client = new Discord.Client();
 
 const commandHandler = require("./commandhandler.js");
 const logHandler = require("./loghandler.js");
+const configHandler = require("./confighandler.js");
 
-commandHandler.readCommands(() => {
-    client.login("lazytochangeyet");
-    logHandler.warning("Logged in!");
+
+configHandler.readConfig(() => {
+    commandHandler.readCommands(() => {
+        client.login(configHandler.discordToken)
+            .then(() => {
+                logHandler.warning("Logged in!");
+            })
+            .catch((err) => {
+                logHandler.error(err);
+            });
+    });
 });
 
 client.on("message", (msg) => {
