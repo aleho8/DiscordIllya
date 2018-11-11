@@ -14,6 +14,10 @@ configHandler.readConfig(() => {
             })
             .catch((err) => {
                 logHandler.error(err);
+                logHandler.warning("Restarting...");
+                setTimeout(() => {
+                    process.exit(66);
+                }, 3000);
             });
     });
 });
@@ -30,3 +34,10 @@ client.on("error", (err) => {
     logHandler.error(err.message);
 });
 
+process.on("uncaughtException", (err) => {
+    logHandler.error(err.message);
+    logHandler.warning("Restarting...");
+    setTimeout(() => {
+        process.exit(66);
+    }, 3000);
+});
