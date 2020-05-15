@@ -4,6 +4,7 @@ const client = new Discord.Client();
 const commandHandler = require("./commandhandler.js");
 const logHandler = require("./loghandler.js");
 const configHandler = require("./confighandler.js");
+const voiceHandler = require("./voicehandler.js");
 
 
 configHandler.readConfig(() => {
@@ -11,6 +12,7 @@ configHandler.readConfig(() => {
         client.login(configHandler.discordToken)
             .then(() => {
                 logHandler.warning("Logged in!");
+                client.voiceHandler = voiceHandler;
             })
             .catch((err) => {
                 logHandler.error(err);

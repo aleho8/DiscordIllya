@@ -7,9 +7,9 @@ module.exports = {
     args: "<YouTubeURL>",
     aliases: ["yt"],
     execute: (bot, msg, args) => {
-        var voiceid = msg.member.voiceChannelID;
+        var voiceid = msg.member.voice.channelID;
         if (voiceid) {
-            if (bot.voiceConnections.array().findIndex((v) => { return v.channel.id == voiceid }) > -1) {
+            if (bot.voiceHandler.voiceConnections.findIndex((v) => { return v.channel.id == voiceid }) > -1) {
                 voiceHandler.youTube(bot, msg, voiceid, args[0]);
             }
             else {

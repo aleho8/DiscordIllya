@@ -7,7 +7,7 @@ module.exports = {
     args: "",
     aliases: [],
     execute: (bot, msg, args) => {
-        var voiceid = msg.member.voiceChannelID;
+        var voiceid = msg.member.voice.channelID;
         if (voiceid) {
             voiceHandler.joinChannel(bot, msg, voiceid);
         }
