@@ -1,5 +1,4 @@
 const logHandler = require("./loghandler.js");
-const beepbox = require("./beepbox_synth.js");
 const fs = require("fs");
 const ytdl = require("ytdl-core");
 
@@ -51,12 +50,26 @@ class VoiceHandler {
     youTube(bot, msg, channelId, ytUrl) {
         var voice = this.voiceConnections.find((e) => { return e.channel.id == channelId });
         if (voice) {
-            voice.queue.push({ type: "youtube", url: ytUrl });
-            if (voice.queue.length == 1) {
-                this.playNext(voice.channel.id);
+            if (ytdl.validateURL(ytUrl)) {
+                voice.queue.push({ type: "youtube", url: ytUrl });
+                ytdl.getBasicInfo(ytUrl, (err, info) => {
+                    if (err) {
+                        logHandler.error(err.message);
+                    }
+                    if (voice.queue.length == 1) {
+                        msg.channel.send(`Playing \`${info.title}\`.`);
+                        this.playNext(voice.channel.id);
+                    }
+                    else {
+                        msg.channel.send(`Added \`${info.title}\` to the queue.`);
+                    }
+                    if (msg.deletable) {
+                        msg.delete();
+                    }
+                });
             }
             else {
-                msg.channel.send("Added to queue.");
+                msg.channel.send("The requested URL is invalid.");
             }
         }
     }
