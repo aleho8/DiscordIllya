@@ -1,9 +1,6 @@
 const logHandler = require("./loghandler.js");
-const fs = require("fs");
 const ytdl = require("ytdl-core");
 
-
-const Duplex = require('stream').Duplex;
 
 class VoiceHandler {
     constructor() {
@@ -38,9 +35,9 @@ class VoiceHandler {
     }
 
     leaveChannel(bot, msg, channelId) {
-        var index = this.voiceConnections.findIndex((e) => { return e.channel.id == channelId });
+        let index = this.voiceConnections.findIndex((e) => { return e.channel.id == channelId });
         if (index > -1) {
-            if (this.voiceConnections[index].dispatcher) this.voiceConnections[index].dispatcher.end("dc");
+            if (this.voiceConnections[index].dispatcher) this.voiceConnections[index].dispatcher.destroy();
             this.voiceConnections[index].disconnect();
             logHandler.warning("Left voice channel! (" + this.voiceConnections[index].channel.name + ")");
             this.voiceConnections.splice(index, 1);
@@ -48,7 +45,7 @@ class VoiceHandler {
     }
 
     youTube(bot, msg, channelId, ytUrl) {
-        var voice = this.voiceConnections.find((e) => { return e.channel.id == channelId });
+        let voice = this.voiceConnections.find((e) => { return e.channel.id == channelId });
         if (voice) {
             if (ytdl.validateURL(ytUrl)) {
                 voice.queue.push({ type: "youtube", url: ytUrl });
@@ -75,17 +72,19 @@ class VoiceHandler {
     }
 
     playNext(channelId, isSkip) {
-        var voice = this.voiceConnections.find((e) => { return e.channel.id == channelId });
+        let voice = this.voiceConnections.find((e) => { return e.channel.id == channelId });
         if (voice) {
             if (voice.queue.length > 0) {
                 if (isSkip) {
                     voice.queue.splice(0, 1);
                 }
-                var next = voice.queue[0];
-                var stream = ytdl(next.url, { filter: 'audioonly' });
-                voice.play(stream);
-                voice.dispatcher.on("finish", (reason) => {
+                let next = voice.queue[0];
+                let stream = ytdl(next.url, { filter: 'audioonly' });
+                let dispatcher = voice.play(stream);
+                dispatcher.on("finish", (reason) => {
+                    console.log("Finished playing...");
                     if (reason !== "dc") {
+                        console.log("Should play next, if any...");
                         voice.queue.splice(0, 1);
                         this.playNext(voice.channel.id);
                     }

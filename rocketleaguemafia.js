@@ -9,78 +9,148 @@ class MafiaGameHandler {
         this.games = [];
     }
 
+    getNumberOfTeams(bot, msg, game) {
+        return new Promise((resolve, reject) => {
+            let sendEmbed = new Discord.MessageEmbed()
+                .setColor("#0a50a1")
+                .setTitle('Creating new game')
+                .setAuthor("Rocket League Mafia", bot.user.avatarURL())
+                .setDescription(`Successfully created a game.\nTo set the number of teams react with the appropriate number. You have **1 minute**!`)
+                .addField('Lobby ID', game.gameId)
+                .setTimestamp()
+                .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+            msg.channel.send(sendEmbed)
+                .then(async (gamemsg) => {
+                    game.gameMessage = gamemsg;
+                    await game.gameMessage.react(numberEmojis[1]);
+                    await game.gameMessage.react(numberEmojis[2]);
+                    let filter = (reaction, user) => user.id === game.gameCreator.id && numberEmojis.includes(reaction.emoji.name);
+                    let collector = game.gameMessage.createReactionCollector(filter, { time: 60000 });
+                    collector.on("collect", (reaction, user) => {
+                        switch (reaction.emoji.name) {
+                            case numberEmojis[1]:
+                                game.teamNumber = 1;
+                                break;
+                            case numberEmojis[2]:
+                                game.teamNumber = 2;
+                                break;
+                        }
+                        if (game.teamNumber != 0) {
+                            collector.stop("selectedteamSize");
+                            resolve(game);
+                        }
+                    });
+                    collector.on("end", (collected, reason) => {
+                        if (reason != "selectedteamSize") {
+                            reject("No selection of the number of teams.");
+                        }
+                    });
+                })
+                .catch((err) => {
+                    logHandler.error(err);
+                    reject(err);
+                });
+        });
+    }
+    getNumberOfPlayers(bot, msg, game) {
+        return new Promise((resolve, reject) => {
+            let sendEmbed = new Discord.MessageEmbed()
+                .setColor("#0a50a1")
+                .setTitle('Creating new game')
+                .setAuthor("Rocket League Mafia", bot.user.avatarURL())
+                .setDescription(`Successfully created a game.\nTo set the number of players react with the appropriate number. You have **1 minute**!`)
+                .addField('Lobby ID', game.gameId)
+                .setTimestamp()
+                .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+            game.gameMessage.reactions.removeAll()
+                .then(() => {
+                    game.gameMessage.edit(sendEmbed)
+                        .then(async () => {
+                            await game.gameMessage.react(numberEmojis[2]);
+                            await game.gameMessage.react(numberEmojis[3]);
+                            await game.gameMessage.react(numberEmojis[4]);
+                            await game.gameMessage.react(numberEmojis[5]);
+                            await game.gameMessage.react(numberEmojis[6]);
+                            await game.gameMessage.react(numberEmojis[7]);
+                            await game.gameMessage.react(numberEmojis[8]);
+                            let filter = (reaction, user) => user.id === game.gameCreator.id && numberEmojis.includes(reaction.emoji.name);
+                            let collector = game.gameMessage.createReactionCollector(filter, { time: 60000 });
+                            collector.on("collect", (reaction, user) => {
+                                switch (reaction.emoji.name) {
+                                    case numberEmojis[2]:
+                                        game.gameSize = 2;
+                                        break;
+                                    case numberEmojis[3]:
+                                        game.gameSize = 3;
+                                        break;
+                                    case numberEmojis[4]:
+                                        game.gameSize = 4;
+                                        break;
+                                    case numberEmojis[5]:
+                                        game.gameSize = 5;
+                                        break;
+                                    case numberEmojis[6]:
+                                        game.gameSize = 6;
+                                        break;
+                                    case numberEmojis[7]:
+                                        game.gameSize = 7;
+                                        break;
+                                    case numberEmojis[8]:
+                                        game.gameSize = 8;
+                                        break;
+                                }
+                                if (game.gameSize != 0) {
+                                    collector.stop("selectedplayerSize");
+                                    game.gameCreator.points = 0;
+                                    game.players.push(game.gameCreator);
+                                    this.games.push(game);
+                                    this.waitForPlayerJoins(bot, msg, game);
+                                    resolve(game);
+                                }
+                            });
+                            collector.on("end", (collected, reason) => {
+                                if (reason != "selectedplayerSize") {
+                                    reject("Not enough players joined.");
+                                }
+                            });
+                        })
+                        .catch((err) => {
+                            logHandler.error(err);
+                            reject(err);
+                        });
+
+                });
+        })
+            .catch((err) => {
+                logHandler.error(err);
+                reject(err);
+            });
+    }
+
+
     createGame(bot, msg, userId) {
         return new Promise((resolve, reject) => {
             if (!this.checkUserGames(userId)) {
                 bot.users.fetch(userId)
                     .then((gameuser) => {
                         let newGame = new MafiaGame(gameuser);
-                        let sendEmbed = new Discord.MessageEmbed()
-                            .setColor("#0a50a1")
-                            .setTitle('Creating new game')
-                            .setAuthor("Rocket League Mafia", bot.user.avatarURL())
-                            .setDescription(`Successfully created a game.\nTo set the game size react to this message with the correct number. You have **1 minute**!`)
-                            .addField('Lobby ID', newGame.gameId)
-                            .setTimestamp()
-                            .setFooter('RL Mafia Lobby created by ' + newGame.gameCreator.username, newGame.gameCreator.avatarURL());
-                        msg.channel.send(sendEmbed)
-                            .then(async (gamemsg) => {
-                                newGame.gameMessage = gamemsg;
-                                await gamemsg.react(numberEmojis[2]);
-                                await gamemsg.react(numberEmojis[3]);
-                                await gamemsg.react(numberEmojis[4]);
-                                await gamemsg.react(numberEmojis[5]);
-                                await gamemsg.react(numberEmojis[6]);
-                                await gamemsg.react(numberEmojis[7]);
-                                await gamemsg.react(numberEmojis[8]);
-                                let filter = (reaction, user) => user.id === gameuser.id && numberEmojis.includes(reaction.emoji.name);
-                                let collector = gamemsg.createReactionCollector(filter, { time: 60000 });
-                                collector.on("collect", (reaction, user) => {
-                                    switch (reaction.emoji.name) {
-                                        case numberEmojis[2]:
-                                            newGame.gameSize = 2;
-                                            break;
-                                        case numberEmojis[3]:
-                                            newGame.gameSize = 3;
-                                            break;
-                                        case numberEmojis[4]:
-                                            newGame.gameSize = 4;
-                                            break;
-                                        case numberEmojis[5]:
-                                            newGame.gameSize = 5;
-                                            break;
-                                        case numberEmojis[6]:
-                                            newGame.gameSize = 6;
-                                            break;
-                                        case numberEmojis[7]:
-                                            newGame.gameSize = 7;
-                                            break;
-                                        case numberEmojis[8]:
-                                            newGame.gameSize = 8;
-                                            break;
-                                    }
-                                    if (newGame.gameSize != 0) {
-                                        collector.stop("selectedSize");
-                                        newGame.gameCreator.points = 0;
-                                        newGame.players.push(newGame.gameCreator);
-                                        this.games.push(newGame);
-                                        this.waitForPlayerJoins(bot, msg, newGame);
-                                        resolve(newGame);
-                                    }
-                                });
-                                collector.on("end", (collected, reason) => {
-                                    if (reason != "selectedSize") {
-                                        gamemsg.channel.send("You did not react! Removing game...");
-                                        gamemsg.delete();
-                                        reject();
-                                    }
-                                });
+                        this.getNumberOfTeams(bot, msg, newGame)
+                            .then((newGame) => {
+                                this.getNumberOfPlayers(bot, msg, newGame)
+                                    .then((createdGame) => {
+                                        resolve(createdGame);
+                                    })
+                                    .catch((err) => {
+                                        newGame.gameMessage.edit(err);
+                                        logHandler.error(err);
+                                        reject(err);
+                                    })
                             })
                             .catch((err) => {
-                                msg.channel.send("There was an error while creating the game!");
+                                newGame.gameMessage.edit(err);
                                 logHandler.error(err);
-                                reject();
-                            });
+                                reject(err);
+                            })
                     })
                     .catch((err) => {
                         msg.channel.send("There was an error while creating the game!");
@@ -101,7 +171,7 @@ class MafiaGameHandler {
                 let playerlist = game.players.map((p) => p.username).join("\n");
                 let sendEmbed = new Discord.MessageEmbed()
                     .setColor("#0a50a1")
-                    .setTitle('Waiting for players')
+                    .setTitle(`Waiting for players ${game.players.length}/${game.gameSize}`)
                     .setAuthor("Rocket League Mafia", bot.user.avatarURL())
                     .setDescription(`Waiting for players to join the game.`)
                     .addField("Players", playerlist)
@@ -116,15 +186,11 @@ class MafiaGameHandler {
                         user.points = 0;
                         game.players.push(user);
                         playerlist = game.players.map((p) => p.username).join("\n");
-                        let sendEmbed = new Discord.MessageEmbed()
-                            .setColor("#0a50a1")
-                            .setTitle('Waiting for players')
-                            .setAuthor("Rocket League Mafia", bot.user.avatarURL())
-                            .setDescription(`Waiting for players to join the game.`)
-                            .addField("Players", playerlist)
-                            .addField('Lobby ID', game.gameId)
-                            .setTimestamp()
-                            .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+                        sendEmbed.setTitle(`Waiting for players ${game.players.length}/${game.gameSize}`);
+                        sendEmbed.fields = [];
+                        sendEmbed.addField("Players", playerlist);
+                        sendEmbed.addField('Lobby ID', game.gameId);
+                        sendEmbed.setTimestamp();
                         game.gameMessage.edit(sendEmbed);
                         if (game.players.length == game.gameSize) {
                             collector.stop("gamefull");
@@ -147,7 +213,7 @@ class MafiaGameHandler {
         game.gameMessage.reactions.removeAll()
             .then(async () => {
                 this.sendRoles(bot, msg, game);
-                let playerlist = game.players.map((p) => p.username).join("\n");
+                let playerlist = game.players.map((p) => p.username + ": " + p.points + " points").join("\n");
                 let sendEmbed = new Discord.MessageEmbed()
                     .setColor("#0a50a1")
                     .setTitle('Round started')
@@ -158,64 +224,126 @@ class MafiaGameHandler {
                     .setTimestamp()
                     .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
                 game.gameMessage.edit(sendEmbed);
-                await game.gameMessage.react("🟠");
-                await game.gameMessage.react("🔵");
-                let filter = (reaction, user) => user.id === game.gameCreator.id;
-                let collector = game.gameMessage.createReactionCollector(filter, { time: 1800000 });
-                collector.on("collect", (reaction, user) => {
-                    playerlist = game.players.map((p) => p.username).join("\n");
-                    let mafiaTeamWin = false; //If Mafia is on winning team, no vote, teammates get 2 points.
-                    let winnerTeamColor = "#0a50a1";
-                    switch (reaction.emoji.name) {
-                        case "🟠":
-                            mafiaTeamWin = this.checkResult(bot, msg, game, game.teamOrange); //If Mafia is on winning team, no vote, teammates get 2 points.
-                            winnerTeamColor = "#ffb026";
-                            break;
-                        case "🔵":
-                            mafiaTeamWin = this.checkResult(bot, msg, game, game.teamBlue); //If Mafia is on winning team, no vote, teammates get 2 points.
-                            winnerTeamColor = "#2b87ff";
-                            break;
-                    }
-                    if (mafiaTeamWin) {
-                        let sendEmbed = new Discord.MessageEmbed()
-                            .setColor(winnerTeamColor)
-                            .setTitle('Round Finished')
-                            .setAuthor("Rocket League Mafia", bot.user.avatarURL())
-                            .setDescription(`The Mafia was **${game.mafiaUser.username}**! His team still won, so no vote is needed, and his teammates get 2 points!`)
-                            .addField("Winner Team ", (winnerTeamColor == "#ffb026" ? "Orange" : "Blue"))
-                            .addField("Players", playerlist)
-                            .addField('Lobby ID', game.gameId)
-                            .setTimestamp()
-                            .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
-                        game.gameMessage.edit(sendEmbed).then(() => {
-                            setTimeout(() => {
-                                this.calculatePoints(bot, msg, game, mafiaTeamWin);
-                                this.displayResults(bot, msg, game);
-                            }, 5000);
-                        });
-                    }
-                    else {
-                        let sendEmbed = new Discord.MessageEmbed()
-                            .setColor(winnerTeamColor)
-                            .setTitle('Round Finished')
-                            .setAuthor("Rocket League Mafia", bot.user.avatarURL())
-                            .setDescription("It is time to vote!\nYou have **1 minute** to vote!")
-                            .addField("Winner Team ", (winnerTeamColor == "#ffb026" ? "Orange" : "Blue"))
-                            .addField("Players", playerlist)
-                            .addField('Lobby ID', game.gameId)
-                            .setTimestamp()
-                            .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
-                        game.gameMessage.edit(sendEmbed);
-                        this.sendVotes(bot, msg, game)
-                            .then(() => {
+                if (game.teamNumber === 2) {
+                    await game.gameMessage.react("🟠");
+                    await game.gameMessage.react("🔵");
+                    let filter = (reaction, user) => user.id === game.gameCreator.id;
+                    let collector = game.gameMessage.createReactionCollector(filter, { time: 1800000 });
+                    collector.on("collect", (reaction, user) => {
+                        playerlist = game.players.map((p) => p.username).join("\n");
+                        let mafiaTeamWin = false; //If Mafia is on winning team, no vote, teammates get 2 points.
+                        let winnerTeamColor = "#0a50a1";
+                        switch (reaction.emoji.name) {
+                            case "🟠":
+                                mafiaTeamWin = this.checkResult(bot, msg, game, game.teamOrange); //If Mafia is on winning team, no vote, teammates get 2 points.
+                                winnerTeamColor = "#ffb026";
+                                break;
+                            case "🔵":
+                                mafiaTeamWin = this.checkResult(bot, msg, game, game.teamBlue); //If Mafia is on winning team, no vote, teammates get 2 points.
+                                winnerTeamColor = "#2b87ff";
+                                break;
+                        }
+                        if (mafiaTeamWin) {
+                            let sendEmbed = new Discord.MessageEmbed()
+                                .setColor(winnerTeamColor)
+                                .setTitle('Round Finished')
+                                .setAuthor("Rocket League Mafia", bot.user.avatarURL())
+                                .setDescription(`The Mafia was **${game.mafiaUser.username}**! His team still won, so no vote is needed, and his teammates get 2 points!`)
+                                .addField("Winner Team ", (winnerTeamColor == "#ffb026" ? "Orange" : "Blue"))
+                                .addField("Players", playerlist)
+                                .addField('Lobby ID', game.gameId)
+                                .setTimestamp()
+                                .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+                            game.gameMessage.edit(sendEmbed).then(() => {
                                 setTimeout(() => {
                                     this.calculatePoints(bot, msg, game, mafiaTeamWin);
                                     this.displayResults(bot, msg, game);
                                 }, 5000);
                             });
-                    }
-                    collector.stop();
-                });
+                        }
+                        else {
+                            let sendEmbed = new Discord.MessageEmbed()
+                                .setColor(winnerTeamColor)
+                                .setTitle('Round Finished')
+                                .setAuthor("Rocket League Mafia", bot.user.avatarURL())
+                                .setDescription("It is time to vote!\nYou have **1 minute** to vote!")
+                                .addField("Winner Team ", (winnerTeamColor == "#ffb026" ? "Orange" : "Blue"))
+                                .addField("Players", playerlist)
+                                .addField('Lobby ID', game.gameId)
+                                .setTimestamp()
+                                .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+                            game.gameMessage.edit(sendEmbed);
+                            this.sendVotes(bot, msg, game)
+                                .then(() => {
+                                    setTimeout(() => {
+                                        this.calculatePoints(bot, msg, game, mafiaTeamWin);
+                                        this.displayResults(bot, msg, game);
+                                    }, 5000);
+                                });
+                        }
+                        collector.stop();
+                    });
+                }
+                else {
+                    await game.gameMessage.react("✔️");
+                    await game.gameMessage.react("❌");
+                    let filter = (reaction, user) => user.id === game.gameCreator.id;
+                    let collector = game.gameMessage.createReactionCollector(filter, { time: 1800000 });
+                    collector.on("collect", (reaction, user) => {
+                        playerlist = game.players.map((p) => p.username).join("\n");
+                        let mafiaTeamWin = false; //If Mafia is on winning team, no vote, teammates get 2 points.
+                        let winnerTeamColor = "#0a50a1";
+                        switch (reaction.emoji.name) {
+                            case "✔️":
+                                mafiaTeamWin = true //If Mafia is on winning team, no vote, teammates get 2 points.
+                                winnerTeamColor = "#38d400";
+                                break;
+                            case "❌":
+                                mafiaTeamWin = false //If Mafia is on winning team, no vote, teammates get 2 points.
+                                winnerTeamColor = "#d40000";
+                                break;
+                        }
+                        if (mafiaTeamWin) {
+                            let sendEmbed = new Discord.MessageEmbed()
+                                .setColor(winnerTeamColor)
+                                .setTitle('Round Finished')
+                                .setAuthor("Rocket League Mafia", bot.user.avatarURL())
+                                .setDescription(`The Mafia was **${game.mafiaUser.username}**! His team still won, so no vote is needed, and his teammates get 2 points!`)
+                                .addField("Winner Team ", (winnerTeamColor == "#38d400" ? "Us" : "Enemy"))
+                                .addField("Players", playerlist)
+                                .addField('Lobby ID', game.gameId)
+                                .setTimestamp()
+                                .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+                            game.gameMessage.edit(sendEmbed).then(() => {
+                                setTimeout(() => {
+                                    this.calculatePoints(bot, msg, game, mafiaTeamWin);
+                                    this.displayResults(bot, msg, game);
+                                }, 5000);
+                            });
+                        }
+                        else {
+                            let sendEmbed = new Discord.MessageEmbed()
+                                .setColor(winnerTeamColor)
+                                .setTitle('Round Finished')
+                                .setAuthor("Rocket League Mafia", bot.user.avatarURL())
+                                .setDescription("It is time to vote!\nYou have **1 minute** to vote!")
+                                .addField("Winner Team ", (mafiaTeamWin ? "Us" : "Enemy"))
+                                .addField("Players", playerlist)
+                                .addField('Lobby ID', game.gameId)
+                                .setTimestamp()
+                                .setFooter('RL Mafia Lobby created by ' + game.gameCreator.username, game.gameCreator.avatarURL());
+                            game.gameMessage.edit(sendEmbed);
+                            this.sendVotes(bot, msg, game)
+                                .then(() => {
+                                    setTimeout(() => {
+                                        this.calculatePoints(bot, msg, game, mafiaTeamWin);
+                                        this.displayResults(bot, msg, game);
+                                    }, 5000);
+                                });
+                        }
+                        collector.stop();
+                    });
+                }
             });
     }
 
@@ -232,13 +360,18 @@ class MafiaGameHandler {
                 else {
                     dmstring += "You are **NOT** the Mafia! You have to win the game, and guess who the Mafia is!";
                 }
-                if (this.getPlayerTeamColor(game, game.players[i]) == "orange") {
-                    dmstring += "\nYou are in team **ORANGE**!";
+                if (game.teamNumber === 2) { // 2 teams in the game
+                    if (this.getPlayerTeamColor(game.players[i]) == "orange") {
+                        dmstring += "\nYou are in team **ORANGE**!";
+                    }
+                    else {
+                        dmstring += "\nYou are in team **BLUE**";
+                    }
                 }
-                else {
-                    dmstring += "\nYou are in team **BLUE**";
+                else { // 1 team in the game
+                    dmstring += "\nYou are all in the same team!";
                 }
-                let teammatestring = this.getPlayerteammates(game.players[i]).map((p) => p.username).join("\n");
+                let teammatestring = this.getPlayerTeammates(game.players[i]).map((p) => p.username);
                 let sendEmbed = new Discord.MessageEmbed()
                     .setColor("#0a50a1")
                     .setTitle('Team Information')
@@ -254,21 +387,23 @@ class MafiaGameHandler {
     }
 
     createTeams(bot, msg, game) {
-        game.teamOrange = []; // Team 1
-        game.teamBlue = []; // Team 2 
-        for (let i = 0; i < game.players.length; i++) {
-            let teamNumber = Math.floor(Math.random() * 2);
-            if (game.teamOrange.length == Math.floor(game.gameSize / 2)) {
-                teamNumber = 2;
-            }
-            if (game.teamBlue.length == Math.floor(game.gameSize / 2)) {
-                teamNumber = 1;
-            }
-            if (teamNumber == 1) {
-                game.teamOrange.push(game.players[i]);
-            }
-            else {
-                game.teamBlue.push(game.players[i]);
+        if (game.teamNumber === 2) {
+            game.teamOrange = []; // Team 1
+            game.teamBlue = []; // Team 2 
+            for (let i = 0; i < game.players.length; i++) {
+                let teamNumber = Math.floor(Math.random() * 2);
+                if (game.teamOrange.length == Math.floor(game.gameSize / 2)) {
+                    teamNumber = 2;
+                }
+                if (game.teamBlue.length == Math.floor(game.gameSize / 2)) {
+                    teamNumber = 1;
+                }
+                if (teamNumber == 1) {
+                    game.teamOrange.push(game.players[i]);
+                }
+                else {
+                    game.teamBlue.push(game.players[i]);
+                }
             }
         }
     }
@@ -357,27 +492,40 @@ class MafiaGameHandler {
 
     calculatePoints(bot, msg, game, mafiaWin) {
         if (mafiaWin) {
-            let teammates = this.getPlayerteammates(game.mafiaUser);
+            let teammates = this.getPlayerTeammates(game.mafiaUser);
             for (let i = 0; i < game.players.length; i++) {
                 if (teammates.some(e => e.id == game.players[i].id)) {
-                    game.players[i].points += 2;
+                    game.players[i].points += 2; //Winner team gets 2 points if the mafia is in the same team.
                 }
             }
         }
         else {
             let correctguesses = 0;
+            let winnerplayers = game.players.filter(p => this.getPlayerTeammates(game.mafiaUser).indexOf(p) === -1 && p.id !== game.mafiaUser.id);
             for (let i = 0; i < game.players.length; i++) {
+                if (winnerplayers.indexOf(game.players[i]) !== -1) {
+                    game.players[i].points += 1;  //Winner team gets 1 point if mafia is in the other team
+                }
                 if (game.players[i].vote == game.mafiaIndex) {
                     game.players[i].points += 1;
                     correctguesses++;
                 }
             }
+            game.players[this.getMafiaPlayerIndex(game)].points += 1;
             if (correctguesses < game.gameSize / 2) {
                 for (let i = 0; i < game.players.length; i++) {
                     if (game.players[i].id == game.mafiaUser.id) {
-                        game.players[i].points += 3;
+                        game.players[i].points += 2;
                     }
                 }
+            }
+        }
+    }
+
+    getMafiaPlayerIndex(game) {
+        for (let i = 0; i < game.players.length; i++) {
+            if (game.players[i].id == game.mafiaUser.id) {
+                return i;
             }
         }
     }
@@ -406,14 +554,20 @@ class MafiaGameHandler {
                     collector.on("collect", (reaction, user) => {
                         switch (reaction.emoji.name) {
                             case "🔴":
-                                game.gameMessage.channel.send("Removed game with ID: " + game.gameId);
+                                game.gameMessage.edit("Removed game with ID: " + game.gameId);
                                 this.games.splice(this.games.findIndex((g) => g.gameId == game.gameId), 1);
                                 break;
                             case "🔄":
                                 this.newRound(bot, msg, game);
                                 break;
                         }
-                        collector.stop();
+                        collector.stop("reacted");
+                    });
+                    collector.on("end", (collected, reason) => {
+                        if (reason !== "reacted") {
+                            game.gameMessage.edit("Removed game with ID: " + game.gameId);
+                            this.games.splice(this.games.findIndex((g) => g.gameId == game.gameId), 1);
+                        }
                     });
                 });
         });
@@ -446,7 +600,7 @@ class MafiaGameHandler {
     }
 
     //Returns the team color of a player in string format
-    getPlayerTeamColor(game, player) {
+    getPlayerTeamColor(player) {
         let teamColor;
         if (this.checkUserGames(player.id)) {
             let game = this.getUserGame(player.id);
@@ -466,27 +620,33 @@ class MafiaGameHandler {
 
 
     //Returns the teammates of the player, if any
-    getPlayerteammates(player) {
+    getPlayerTeammates(player) {
         let teammates = [];
         if (this.checkUserGames(player.id)) {
             let game = this.getUserGame(player.id);
-            for (let i = 0; i < game.teamBlue.length; i++) {
-                if (game.teamBlue[i].id == player.id) {
-                    for (let j = 0; j < game.teamBlue.length; j++) {
-                        if (game.teamBlue[j].id != player.id) {
-                            teammates.push(game.teamBlue[j]);
+            if (game.teamNumber === 2) { // 2 teams in the game
+                for (let i = 0; i < game.teamBlue.length; i++) {
+                    if (game.teamBlue[i].id === player.id) {
+                        for (let j = 0; j < game.teamBlue.length; j++) {
+                            if (game.teamBlue[j].id !== player.id) {
+                                teammates.push(game.teamBlue[j]);
+                            }
                         }
                     }
+                }
+                for (let i = 0; i < game.teamOrange.length; i++) {
+                    if (game.teamOrange[i].id === player.id) {
+                        for (let j = 0; j < game.teamOrange.length; j++) {
+                            if (game.teamOrange[j].id !== player.id) {
+                                teammates.push(game.teamOrange[j]);
+                            }
+                        }
+                    }
+
                 }
             }
-            for (let i = 0; i < game.teamOrange.length; i++) {
-                if (game.teamOrange[i].id == player.id) {
-                    for (let j = 0; j < game.teamOrange.length; j++) {
-                        if (game.teamOrange[j].id != player.id) {
-                            teammates.push(game.teamOrange[j]);
-                        }
-                    }
-                }
+            else { // 1 team in the game
+                teammates = game.players.filter(p => p.id !== player.id);
             }
         }
         return teammates;
@@ -502,6 +662,7 @@ class MafiaGame {
         this.gameId = gameCreator.id;
         this.gameCreator = gameCreator;
         this.gameSize = 0;
+        this.teamNumber = 0;
         this.players = [];
         this.teamOrange = []; //Team 1 
         this.teamBlue = []; // Team 2 

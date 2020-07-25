@@ -6,39 +6,51 @@ class CommandHandler {
     constructor() {
         this.prefix = "-";
         this.commands = [];
-        this.executeCommand = executeCommand;
-        this.readCommands = readCommands;
     }
-}
 
-function executeCommand(bot, msg) {
-    msg.content = msg.content.trim();
+    executeCommand(bot, msg) {
+        msg.content = msg.content.trim();
 
-    var results = msg.content.replace(/\s+/g, " ").split(/\s/g);
-    var commandname = results[0].replace(this.prefix, "");
-    var command = this.commands.find((c) => {
-        return c.name === commandname || (c.aliases.findIndex((a) => { return a === commandname }) > -1);
-    });
-    results.splice(0,1);
-    var args = results;
-    if (command) {
-        if (command.args != "" && args.length == 0) {
-            msg.channel.send(`You missed a few arguments! Use \`${this.prefix}help\`!`);
+        let results = msg.content.replace(/\s+/g, " ").split(/\s/g);
+        let commandgroup = results[0].replace(this.prefix, "");
+        let commands = this.commands.find(c => c.name === commandgroup && c.group === "") || this.commands.filter(c => c.group === commandgroup);
+        if (Array.isArray(commands)) {
+            let command = commands.find(c => c.name === results[1] || (c.aliases.findIndex(a => a === results[1]) > -1));
+            if (command) {
+                results.splice(0, 2);
+                let args = results;
+                if ((command.args != "" && command.args.indexOf("?") === -1) && args.length == 0) {
+                    msg.channel.send(`You missed a few arguments! Use \`${this.prefix}help\`!`);
+                }
+                else {
+                    command.execute(bot, msg, args);
+                }
+            }
         }
-        else {
-            command.execute(bot, msg, args);
+        else if (commands) {
+            results.splice(0, 1);
+            let args = results;
+            if ((commands.args != "" && commands.args.indexOf("?") === -1) && args.length == 0) {
+                msg.channel.send(`You missed a few arguments! Use \`${this.prefix}help\`!`);
+            }
+            else {
+                commands.execute(bot, msg, args);
+            }
         }
+
     }
+
+    readCommands(callback) {
+        fs.readdir("./commands/", (err, files) => {
+            if (err) logHandler.error(err);
+            for (let i = 0; i < files.length; i++) {
+                this.commands.push(require("./commands/" + files[i]));
+            }
+            callback();
+        });
+    }
+
 }
 
-function readCommands(callback) {
-    fs.readdir("./commands/", (err, files) => {
-        if (err) logHandler.error(err);
-        for (var i = 0; i < files.length; i++) {
-            this.commands[this.commands.length] = require("./commands/" + files[i]);
-        }
-        callback();
-    });
-}
 
 module.exports = new CommandHandler();

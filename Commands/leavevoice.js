@@ -2,10 +2,12 @@ const voiceHandler = require("../voicehandler.js");
 const permHandler = require("../permhandler.js");
 
 module.exports = {
+    group: "voice",
     name: "leave",
-    Permissions: permHandler.Permissions.USER,
+    permissions: permHandler.Permissions.USER,
     args: "",
     aliases: [],
+    description: "Leaves the current voicechannel the bot is in, if the user is in the same channel.",
     execute: (bot, msg, args) => {
         var voiceid = msg.member.voice.channelID;
         if (voiceid) {

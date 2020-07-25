@@ -2,12 +2,14 @@ const voiceHandler = require("../voicehandler.js");
 const permHandler = require("../permhandler.js");
 
 module.exports = {
+    group: "voice",
     name: "join",
-    Permissions: permHandler.Permissions.USER,
+    permissions: permHandler.Permissions.USER,
     args: "",
     aliases: [],
+    description: "Makes the bot join the same voicechannel as the user, if the user is in any.",
     execute: (bot, msg, args) => {
-        var voiceid = msg.member.voice.channelID;
+        let voiceid = msg.member.voice.channelID;
         if (voiceid) {
             voiceHandler.joinChannel(bot, msg, voiceid);
         }

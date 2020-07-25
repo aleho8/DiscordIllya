@@ -2,10 +2,12 @@ const voiceHandler = require("../voicehandler.js");
 const permHandler = require("../permhandler.js");
 
 module.exports = {
+    group: "voice",
     name: "skip",
-    Permissions: permHandler.Permissions.USER,
+    permissions: permHandler.Permissions.USER,
     args: "",
     aliases: [],
+    description: "Skips the currently playing song, if the user is in the same voicechannel as the bot",
     execute: (bot, msg, args) => {
         var voiceid = msg.member.voice.channelID;
         if (voiceid) {

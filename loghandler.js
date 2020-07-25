@@ -13,7 +13,6 @@ class LogHandler {
         };
         this.logDiscordMessage = (dmsg) => {
             if (dmsg.guild !== null) {
-                console.log("discord");
                 console.log("[ " + dmsg.createdAt.toLocaleTimeString() + " ]" + "/[ " + dmsg.guild.name + "/#" + dmsg.channel.name + " ] " + dmsg.author.tag + ": " + dmsg.content);
             }
             else {
